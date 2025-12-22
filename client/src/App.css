@@ -446,3 +446,11 @@
     width: 100%;
   }
 }
+
+.mode-label {
+  color: #333;
+}
+
+.app.dark-mode .mode-label {
+  color: #ccc;
+}

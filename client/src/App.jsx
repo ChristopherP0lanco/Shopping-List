@@ -86,7 +86,9 @@ function App() {
                   checked={darkMode}
                   onChange={(e) => setDarkMode(e.target.checked)}
                 />
-                Dark Mode
+                <span className="mode-label">
+                  {darkMode ? 'Dark Mode' : 'Light Mode'}
+                </span>
               </label>
             </div>
             <div className="setting-item">
