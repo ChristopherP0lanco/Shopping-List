@@ -5,11 +5,9 @@ function App() {
   const [items, setItems] = useState([])
   const [newItem, setNewItem] = useState('')
   const [newQuantity, setNewQuantity] = useState('1')
-  const [newCategory, setNewCategory] = useState('General')
   const [searchQuery, setSearchQuery] = useState('')
   const [showSettings, setShowSettings] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
-  const [categories, setCategories] = useState(['General', 'Produce', 'Dairy', 'Meat', 'Bakery', 'Frozen', 'Pantry'])
 
   const addItem = () => {
     if (newItem.trim()) {
@@ -19,13 +17,11 @@ function App() {
           id: Date.now(),
           name: newItem.trim(),
           quantity: newQuantity,
-          category: newCategory,
           completed: false,
         },
       ])
       setNewItem('')
       setNewQuantity('1')
-      setNewCategory('General')
     }
   }
 
@@ -91,25 +87,6 @@ function App() {
                 </span>
               </label>
             </div>
-            <div className="setting-item">
-              <label>Categories:</label>
-              <div className="categories-list">
-                {categories.map((cat, index) => (
-                  <span key={index} className="category-tag">{cat}</span>
-                ))}
-              </div>
-              <input
-                type="text"
-                placeholder="Add new category"
-                onKeyPress={(e) => {
-                  if (e.key === 'Enter' && e.target.value.trim()) {
-                    setCategories([...categories, e.target.value.trim()])
-                    e.target.value = ''
-                  }
-                }}
-                className="add-category-input"
-              />
-            </div>
             <button onClick={() => setShowSettings(false)} className="close-settings">
               Close
             </button>
@@ -143,18 +120,6 @@ function App() {
                 placeholder="1"
                 className="input-field"
               />
-            </div>
-            <div className="form-group">
-              <label>Category</label>
-              <select
-                value={newCategory}
-                onChange={(e) => setNewCategory(e.target.value)}
-                className="input-field"
-              >
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
-                ))}
-              </select>
             </div>
             <button onClick={addItem} className="add-button">
               + Add Item
@@ -199,7 +164,6 @@ function App() {
                       <span className="item-name">{item.name}</span>
                       <div className="item-meta">
                         <span className="item-quantity">Qty: {item.quantity}</span>
-                        <span className="item-category">{item.category}</span>
                       </div>
                     </div>
                   </div>
