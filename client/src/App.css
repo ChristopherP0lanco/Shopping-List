@@ -36,10 +36,6 @@
   gap: 1rem;
 }
 
-.search-container {
-  position: relative;
-}
-
 .search-bar {
   padding: 0.6rem 1rem;
   padding-left: 2.5rem;

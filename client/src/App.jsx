@@ -85,15 +85,6 @@ function App() {
       <header className="header">
         <h1>Grocery Shopping List</h1>
         <div className="header-controls">
-          <div className="search-container">
-            <input
-              type="text"
-              placeholder="Search items..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="search-bar"
-            />
-          </div>
           <button 
             className="profile-button"
             onClick={() => setShowSettings(!showSettings)}
