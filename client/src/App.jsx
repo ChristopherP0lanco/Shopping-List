@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import './App.css'
 
 function App() {
@@ -8,6 +8,40 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSettings, setShowSettings] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
+  const [apiResults, setApiResults] = useState([])
+  const [isSearching, setIsSearching] = useState(false)
+
+  const searchOpenFoodFacts = async (query) => {
+    if (query.trim().length < 2) {
+      setApiResults([])
+      return
+    }
+
+    setIsSearching(true)
+    try {
+      const response = await fetch(
+        `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=5`
+      )
+      const data = await response.json()
+      
+      if (data.products && data.products.length > 0) {
+        setApiResults(data.products.map(product => ({
+          id: product.code || product.id,
+          name: product.product_name || product.product_name_en || 'Unknown',
+          brand: product.brands || '',
+          image: product.image_url || product.image_front_url || '',
+          quantity: product.quantity || '',
+        })))
+      } else {
+        setApiResults([])
+      }
+    } catch (error) {
+      console.error('Error searching OpenFoodFacts:', error)
+      setApiResults([])
+    } finally {
+      setIsSearching(false)
+    }
+  }
 
   const addItem = () => {
     if (newItem.trim()) {
@@ -105,11 +139,44 @@ function App() {
               <input
                 type="text"
                 value={newItem}
-                onChange={(e) => setNewItem(e.target.value)}
+                onChange={(e) => {
+                  setNewItem(e.target.value)
+                  searchOpenFoodFacts(e.target.value)
+                }}
                 onKeyPress={handleKeyPress}
-                placeholder="Enter item name..."
+                placeholder="Search for products..."
                 className="input-field"
               />
+              {/* API Results Dropdown */}
+              {newItem && apiResults.length > 0 && (
+                <div className="api-results-dropdown">
+                  {apiResults.map((product) => (
+                    <div
+                      key={product.id}
+                      className="api-result-item"
+                      onClick={() => {
+                        setNewItem(product.name)
+                        setApiResults([])
+                      }}
+                    >
+                      {product.image && (
+                        <img 
+                          src={product.image} 
+                          alt={product.name}
+                          className="product-image"
+                          style={{ width: '50px', height: '50px', objectFit: 'cover', marginRight: '10px' }}
+                        />
+                      )}
+                      <div className="product-info">
+                        <div className="product-name">{product.name}</div>
+                        {product.brand && <div className="product-brand">Brand: {product.brand}</div>}
+                        {product.quantity && <div className="product-quantity">Size: {product.quantity}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+              {isSearching && <div style={{ marginTop: '5px', fontSize: '0.9rem', color: '#666' }}>Searching...</div>}
             </div>
             <div className="form-group">
               <label>Quantity</label>
