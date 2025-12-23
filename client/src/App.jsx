@@ -1,18 +1,12 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 
+const API_BASE_URL = 'http://localhost:8000/api'
+
 function App() {
-  const [folders, setFolders] = useState(() => {
-    const saved = localStorage.getItem('shoppingFolders')
-    if (saved) {
-      return JSON.parse(saved)
-    }
-    return [{ id: 'default', name: 'My List', items: [] }]
-  })
-  const [currentFolderId, setCurrentFolderId] = useState(() => {
-    const saved = localStorage.getItem('currentFolderId')
-    return saved || 'default'
-  })
+  const [folders, setFolders] = useState([])
+  const [currentFolderId, setCurrentFolderId] = useState('default')
+  const [isLoading, setIsLoading] = useState(true)
   const [newItem, setNewItem] = useState('')
   const [newQuantity, setNewQuantity] = useState('1')
   const [searchQuery, setSearchQuery] = useState('')
@@ -32,11 +26,80 @@ function App() {
   const currentFolder = folders.find(f => f.id === currentFolderId) || folders[0]
   const items = currentFolder?.items || []
 
-  // Save folders to localStorage whenever they change
+  // Fetch folders from API on mount
   useEffect(() => {
-    localStorage.setItem('shoppingFolders', JSON.stringify(folders))
-    localStorage.setItem('currentFolderId', currentFolderId)
+    fetchFolders()
+  }, [])
+
+  // Save state to server before page unload/refresh
+  useEffect(() => {
+    const saveStateBeforeUnload = async () => {
+      if (folders.length > 0) {
+        try {
+          // Use sendBeacon for reliable sending during page unload
+          const data = JSON.stringify({
+            folders: folders,
+            currentFolderId: currentFolderId
+          })
+          
+          if (navigator.sendBeacon) {
+            navigator.sendBeacon(
+              `${API_BASE_URL}/folders/save`,
+              new Blob([data], { type: 'application/json' })
+            )
+          } else {
+            // Fallback for browsers without sendBeacon
+            await fetch(`${API_BASE_URL}/folders/save`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: data,
+              keepalive: true
+            })
+          }
+        } catch (error) {
+          console.error('Error saving state before unload:', error)
+        }
+      }
+    }
+
+    // Save on visibility change (tab switch, minimize, etc.)
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden') {
+        saveStateBeforeUnload()
+      }
+    }
+
+    // Save before page unload
+    window.addEventListener('beforeunload', saveStateBeforeUnload)
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      window.removeEventListener('beforeunload', saveStateBeforeUnload)
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [folders, currentFolderId])
+
+  const fetchFolders = async () => {
+    try {
+      setIsLoading(true)
+      const response = await fetch(`${API_BASE_URL}/folders`)
+      if (response.ok) {
+        const data = await response.json()
+        setFolders(data.folders || [])
+        if (data.currentFolderId) {
+          setCurrentFolderId(data.currentFolderId)
+        }
+      } else {
+        console.error('Failed to fetch folders')
+      }
+    } catch (error) {
+      console.error('Error fetching folders:', error)
+    } finally {
+      setIsLoading(false)
+    }
+  }
 
   // Save font size to localStorage whenever it changes
   useEffect(() => {
@@ -44,12 +107,27 @@ function App() {
   }, [fontSize])
 
   // Update items in current folder
-  const updateItems = (newItems) => {
-    setFolders(folders.map(folder => 
-      folder.id === currentFolderId 
-        ? { ...folder, items: newItems }
-        : folder
-    ))
+  const updateItems = async (newItems) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/folders/${currentFolderId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ items: newItems }),
+      })
+
+      if (response.ok) {
+        const updatedFolder = await response.json()
+        setFolders(folders.map(folder => 
+          folder.id === currentFolderId ? updatedFolder : folder
+        ))
+      } else {
+        console.error('Failed to update items')
+      }
+    } catch (error) {
+      console.error('Error updating items:', error)
+    }
   }
 
   const searchOpenFoodFacts = async (query) => {
@@ -110,36 +188,69 @@ function App() {
     updateItems(items.filter(item => item.id !== id))
   }
 
-  const createFolder = () => {
+  const createFolder = async () => {
     if (newFolderName.trim()) {
-      const newFolder = {
-        id: Date.now().toString(),
-        name: newFolderName.trim(),
-        items: []
+      try {
+        const response = await fetch(`${API_BASE_URL}/folders`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: newFolderName.trim() }),
+        })
+
+        if (response.ok) {
+          const newFolder = await response.json()
+          setFolders([...folders, newFolder])
+          setNewFolderName('')
+        } else {
+          const error = await response.json()
+          alert(error.error || 'Failed to create folder')
+        }
+      } catch (error) {
+        console.error('Error creating folder:', error)
+        alert('Failed to create folder')
       }
-      setFolders([...folders, newFolder])
-      setNewFolderName('')
     }
   }
 
-  const deleteFolder = (folderId) => {
-    if (folders.length === 1) {
-      alert('You must have at least one folder!')
-      return
-    }
-    if (currentFolderId === folderId) {
-      // Switch to another folder before deleting
-      const otherFolder = folders.find(f => f.id !== folderId)
-      if (otherFolder) {
-        setCurrentFolderId(otherFolder.id)
+  const deleteFolder = async (folderId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/folders/${folderId}`, {
+        method: 'DELETE',
+      })
+
+      if (response.ok) {
+        const data = await response.json()
+        setFolders(folders.filter(f => f.id !== folderId))
+        if (data.currentFolderId) {
+          setCurrentFolderId(data.currentFolderId)
+        }
+      } else {
+        const error = await response.json()
+        alert(error.error || 'Failed to delete folder')
       }
+    } catch (error) {
+      console.error('Error deleting folder:', error)
+      alert('Failed to delete folder')
     }
-    setFolders(folders.filter(f => f.id !== folderId))
   }
 
-  const switchFolder = (folderId) => {
-    setCurrentFolderId(folderId)
-    setSearchQuery('') // Clear search when switching folders
+  const switchFolder = async (folderId) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/folders/current/${folderId}`, {
+        method: 'PUT',
+      })
+
+      if (response.ok) {
+        setCurrentFolderId(folderId)
+        setSearchQuery('') // Clear search when switching folders
+      } else {
+        console.error('Failed to switch folder')
+      }
+    } catch (error) {
+      console.error('Error switching folder:', error)
+    }
   }
 
   const startRenameFolder = (folderId, currentName) => {
@@ -152,15 +263,32 @@ function App() {
     setEditingFolderName('')
   }
 
-  const saveRenameFolder = (folderId) => {
+  const saveRenameFolder = async (folderId) => {
     if (editingFolderName.trim()) {
-      setFolders(folders.map(folder => 
-        folder.id === folderId 
-          ? { ...folder, name: editingFolderName.trim() }
-          : folder
-      ))
-      setEditingFolderId(null)
-      setEditingFolderName('')
+      try {
+        const response = await fetch(`${API_BASE_URL}/folders/${folderId}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ name: editingFolderName.trim() }),
+        })
+
+        if (response.ok) {
+          const updatedFolder = await response.json()
+          setFolders(folders.map(folder => 
+            folder.id === folderId ? updatedFolder : folder
+          ))
+          setEditingFolderId(null)
+          setEditingFolderName('')
+        } else {
+          const error = await response.json()
+          alert(error.error || 'Failed to rename folder')
+        }
+      } catch (error) {
+        console.error('Error renaming folder:', error)
+        alert('Failed to rename folder')
+      }
     }
   }
 
@@ -172,6 +300,16 @@ function App() {
     if (e.key === 'Enter') {
       addItem()
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className={`app ${darkMode ? 'dark-mode' : ''} font-size-${fontSize}`}>
+        <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+          <p>Loading...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
