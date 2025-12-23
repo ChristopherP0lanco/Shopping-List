@@ -2,7 +2,17 @@ import { useState, useEffect } from 'react'
 import './App.css'
 
 function App() {
-  const [items, setItems] = useState([])
+  const [folders, setFolders] = useState(() => {
+    const saved = localStorage.getItem('shoppingFolders')
+    if (saved) {
+      return JSON.parse(saved)
+    }
+    return [{ id: 'default', name: 'My List', items: [] }]
+  })
+  const [currentFolderId, setCurrentFolderId] = useState(() => {
+    const saved = localStorage.getItem('currentFolderId')
+    return saved || 'default'
+  })
   const [newItem, setNewItem] = useState('')
   const [newQuantity, setNewQuantity] = useState('1')
   const [searchQuery, setSearchQuery] = useState('')
@@ -10,6 +20,26 @@ function App() {
   const [darkMode, setDarkMode] = useState(false)
   const [apiResults, setApiResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
+  const [newFolderName, setNewFolderName] = useState('')
+
+  // Get current folder's items
+  const currentFolder = folders.find(f => f.id === currentFolderId) || folders[0]
+  const items = currentFolder?.items || []
+
+  // Save folders to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem('shoppingFolders', JSON.stringify(folders))
+    localStorage.setItem('currentFolderId', currentFolderId)
+  }, [folders, currentFolderId])
+
+  // Update items in current folder
+  const updateItems = (newItems) => {
+    setFolders(folders.map(folder => 
+      folder.id === currentFolderId 
+        ? { ...folder, items: newItems }
+        : folder
+    ))
+  }
 
   const searchOpenFoodFacts = async (query) => {
     if (query.trim().length < 2) {
@@ -45,7 +75,7 @@ function App() {
 
   const addItem = () => {
     if (newItem.trim()) {
-      setItems([
+      updateItems([
         ...items,
         {
           id: Date.now(),
@@ -60,13 +90,45 @@ function App() {
   }
 
   const toggleComplete = (id) => {
-    setItems(items.map(item => 
+    updateItems(items.map(item => 
       item.id === id ? { ...item, completed: !item.completed } : item
     ))
   }
 
   const deleteItem = (id) => {
-    setItems(items.filter(item => item.id !== id))
+    updateItems(items.filter(item => item.id !== id))
+  }
+
+  const createFolder = () => {
+    if (newFolderName.trim()) {
+      const newFolder = {
+        id: Date.now().toString(),
+        name: newFolderName.trim(),
+        items: []
+      }
+      setFolders([...folders, newFolder])
+      setNewFolderName('')
+    }
+  }
+
+  const deleteFolder = (folderId) => {
+    if (folders.length === 1) {
+      alert('You must have at least one folder!')
+      return
+    }
+    if (currentFolderId === folderId) {
+      // Switch to another folder before deleting
+      const otherFolder = folders.find(f => f.id !== folderId)
+      if (otherFolder) {
+        setCurrentFolderId(otherFolder.id)
+      }
+    }
+    setFolders(folders.filter(f => f.id !== folderId))
+  }
+
+  const switchFolder = (folderId) => {
+    setCurrentFolderId(folderId)
+    setSearchQuery('') // Clear search when switching folders
   }
 
   const filteredItems = items.filter(item =>
@@ -83,7 +145,12 @@ function App() {
     <div className={`app ${darkMode ? 'dark-mode' : ''}`}>
       {/* Header with Search and Profile */}
       <header className="header">
-        <h1>Grocery Shopping List</h1>
+        <div>
+          <h1>Grocery Shopping List</h1>
+          {currentFolder && (
+            <p className="current-folder-name">{currentFolder.name}</p>
+          )}
+        </div>
         <div className="header-controls">
           <button 
             className="profile-button"
@@ -184,12 +251,51 @@ function App() {
             </button>
           </div>
           
-          {/* Statistics */}
-          <div className="statistics">
-            <h3>Statistics</h3>
-            <p>Total Items: {items.length}</p>
-            <p>Completed: {items.filter(item => item.completed).length}</p>
-            <p>Remaining: {items.filter(item => !item.completed).length}</p>
+          {/* Folders Section */}
+          <div className="folders-section">
+            <h3>My Lists</h3>
+            <div className="folders-list">
+              {folders.map(folder => (
+                <div
+                  key={folder.id}
+                  className={`folder-item ${currentFolderId === folder.id ? 'active' : ''}`}
+                >
+                  <div
+                    className="folder-name"
+                    onClick={() => switchFolder(folder.id)}
+                  >
+                    📁 {folder.name}
+                    <span className="folder-item-count">({folder.items.length})</span>
+                  </div>
+                  {folders.length > 1 && (
+                    <button
+                      className="delete-folder-button"
+                      onClick={() => deleteFolder(folder.id)}
+                      aria-label="Delete folder"
+                    >
+                      🗑️
+                    </button>
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="create-folder">
+              <input
+                type="text"
+                value={newFolderName}
+                onChange={(e) => setNewFolderName(e.target.value)}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter') {
+                    createFolder()
+                  }
+                }}
+                placeholder="New list name..."
+                className="folder-input"
+              />
+              <button onClick={createFolder} className="create-folder-button">
+                + Create List
+              </button>
+            </div>
           </div>
         </div>
 
