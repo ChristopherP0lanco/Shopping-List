@@ -21,6 +21,8 @@ function App() {
   const [apiResults, setApiResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
+  const [editingFolderId, setEditingFolderId] = useState(null)
+  const [editingFolderName, setEditingFolderName] = useState('')
 
   // Get current folder's items
   const currentFolder = folders.find(f => f.id === currentFolderId) || folders[0]
@@ -129,6 +131,28 @@ function App() {
   const switchFolder = (folderId) => {
     setCurrentFolderId(folderId)
     setSearchQuery('') // Clear search when switching folders
+  }
+
+  const startRenameFolder = (folderId, currentName) => {
+    setEditingFolderId(folderId)
+    setEditingFolderName(currentName)
+  }
+
+  const cancelRenameFolder = () => {
+    setEditingFolderId(null)
+    setEditingFolderName('')
+  }
+
+  const saveRenameFolder = (folderId) => {
+    if (editingFolderName.trim()) {
+      setFolders(folders.map(folder => 
+        folder.id === folderId 
+          ? { ...folder, name: editingFolderName.trim() }
+          : folder
+      ))
+      setEditingFolderId(null)
+      setEditingFolderName('')
+    }
   }
 
   const filteredItems = items.filter(item =>
@@ -260,21 +284,72 @@ function App() {
                   key={folder.id}
                   className={`folder-item ${currentFolderId === folder.id ? 'active' : ''}`}
                 >
-                  <div
-                    className="folder-name"
-                    onClick={() => switchFolder(folder.id)}
-                  >
-                    📁 {folder.name}
-                    <span className="folder-item-count">({folder.items.length})</span>
-                  </div>
-                  {folders.length > 1 && (
-                    <button
-                      className="delete-folder-button"
-                      onClick={() => deleteFolder(folder.id)}
-                      aria-label="Delete folder"
-                    >
-                      🗑️
-                    </button>
+                  {editingFolderId === folder.id ? (
+                    <div className="folder-rename-input">
+                      <input
+                        type="text"
+                        value={editingFolderName}
+                        onChange={(e) => setEditingFolderName(e.target.value)}
+                        onKeyPress={(e) => {
+                          if (e.key === 'Enter') {
+                            saveRenameFolder(folder.id)
+                          } else if (e.key === 'Escape') {
+                            cancelRenameFolder()
+                          }
+                        }}
+                        onBlur={() => saveRenameFolder(folder.id)}
+                        className="rename-input"
+                        autoFocus
+                      />
+                      <button
+                        className="save-rename-button"
+                        onClick={() => saveRenameFolder(folder.id)}
+                        aria-label="Save rename"
+                      >
+                        ✓
+                      </button>
+                      <button
+                        className="cancel-rename-button"
+                        onClick={cancelRenameFolder}
+                        aria-label="Cancel rename"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <>
+                      <div
+                        className="folder-name"
+                        onClick={() => switchFolder(folder.id)}
+                      >
+                        📁 {folder.name}
+                        <span className="folder-item-count">({folder.items.length})</span>
+                      </div>
+                      <div className="folder-actions">
+                        <button
+                          className="rename-folder-button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            startRenameFolder(folder.id, folder.name)
+                          }}
+                          aria-label="Rename folder"
+                        >
+                          ✏️
+                        </button>
+                        {folders.length > 1 && (
+                          <button
+                            className="delete-folder-button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              deleteFolder(folder.id)
+                            }}
+                            aria-label="Delete folder"
+                          >
+                            🗑️
+                          </button>
+                        )}
+                      </div>
+                    </>
                   )}
                 </div>
               ))}

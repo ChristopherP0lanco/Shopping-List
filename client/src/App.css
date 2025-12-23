@@ -348,6 +348,13 @@
   color: #aaa;
 }
 
+.folder-actions {
+  display: flex;
+  gap: 0.25rem;
+  align-items: center;
+}
+
+.rename-folder-button,
 .delete-folder-button {
   background: none;
   border: none;
@@ -359,9 +366,69 @@
   opacity: 0.7;
 }
 
+.rename-folder-button:hover {
+  background-color: rgba(100, 108, 255, 0.1);
+  opacity: 1;
+}
+
 .delete-folder-button:hover {
   background-color: rgba(255, 0, 0, 0.1);
   opacity: 1;
+}
+
+.folder-rename-input {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+}
+
+.rename-input {
+  flex: 1;
+  padding: 0.5rem;
+  border: 2px solid #646cff;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  box-sizing: border-box;
+}
+
+.app.dark-mode .rename-input {
+  background-color: #3a3a3a;
+  border-color: #747bff;
+  color: white;
+}
+
+.rename-input:focus {
+  outline: none;
+  border-color: #535bf2;
+}
+
+.save-rename-button,
+.cancel-rename-button {
+  background: none;
+  border: none;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  font-weight: bold;
+}
+
+.save-rename-button {
+  color: #4caf50;
+}
+
+.save-rename-button:hover {
+  background-color: rgba(76, 175, 80, 0.1);
+}
+
+.cancel-rename-button {
+  color: #f44336;
+}
+
+.cancel-rename-button:hover {
+  background-color: rgba(244, 67, 54, 0.1);
 }
 
 .create-folder {
