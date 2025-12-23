@@ -2,11 +2,25 @@
   min-height: 100vh;
   padding: 0;
   transition: background-color 0.3s, color 0.3s;
+  font-size: 1rem; /* Default medium */
 }
 
 .app.dark-mode {
   background-color: #1a1a1a;
   color: #ffffff;
+}
+
+/* Font Size Classes */
+.app.font-size-small {
+  font-size: 0.875rem;
+}
+
+.app.font-size-medium {
+  font-size: 1rem;
+}
+
+.app.font-size-large {
+  font-size: 1.125rem;
 }
 
 /* Header */
@@ -133,6 +147,52 @@
   display: block;
   margin-bottom: 0.5rem;
   font-weight: 500;
+}
+
+.font-size-options {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.font-size-button {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: 2px solid #ddd;
+  border-radius: 6px;
+  background-color: white;
+  color: #333;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.app.dark-mode .font-size-button {
+  background-color: #3a3a3a;
+  border-color: #555;
+  color: white;
+}
+
+.font-size-button:hover {
+  border-color: #646cff;
+  background-color: #f5f5ff;
+}
+
+.app.dark-mode .font-size-button:hover {
+  background-color: #4a4a5a;
+  border-color: #747bff;
+}
+
+.font-size-button.active {
+  background-color: #646cff;
+  border-color: #646cff;
+  color: white;
+}
+
+.app.dark-mode .font-size-button.active {
+  background-color: #747bff;
+  border-color: #747bff;
 }
 
 .categories-list {

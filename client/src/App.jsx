@@ -18,6 +18,10 @@ function App() {
   const [searchQuery, setSearchQuery] = useState('')
   const [showSettings, setShowSettings] = useState(false)
   const [darkMode, setDarkMode] = useState(false)
+  const [fontSize, setFontSize] = useState(() => {
+    const saved = localStorage.getItem('fontSize')
+    return saved || 'medium'
+  })
   const [apiResults, setApiResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
@@ -33,6 +37,11 @@ function App() {
     localStorage.setItem('shoppingFolders', JSON.stringify(folders))
     localStorage.setItem('currentFolderId', currentFolderId)
   }, [folders, currentFolderId])
+
+  // Save font size to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('fontSize', fontSize)
+  }, [fontSize])
 
   // Update items in current folder
   const updateItems = (newItems) => {
@@ -166,7 +175,7 @@ function App() {
   }
 
   return (
-    <div className={`app ${darkMode ? 'dark-mode' : ''}`}>
+    <div className={`app ${darkMode ? 'dark-mode' : ''} font-size-${fontSize}`}>
       {/* Header with Search and Profile */}
       <header className="header">
         <div>
@@ -202,6 +211,31 @@ function App() {
                   {darkMode ? 'Dark Mode' : 'Light Mode'}
                 </span>
               </label>
+            </div>
+            <div className="setting-item">
+              <label>
+                <span className="mode-label">Font Size:</span>
+              </label>
+              <div className="font-size-options">
+                <button
+                  className={`font-size-button ${fontSize === 'small' ? 'active' : ''}`}
+                  onClick={() => setFontSize('small')}
+                >
+                  Small
+                </button>
+                <button
+                  className={`font-size-button ${fontSize === 'medium' ? 'active' : ''}`}
+                  onClick={() => setFontSize('medium')}
+                >
+                  Medium
+                </button>
+                <button
+                  className={`font-size-button ${fontSize === 'large' ? 'active' : ''}`}
+                  onClick={() => setFontSize('large')}
+                >
+                  Large
+                </button>
+              </div>
             </div>
             <button onClick={() => setShowSettings(false)} className="close-settings">
               Close
