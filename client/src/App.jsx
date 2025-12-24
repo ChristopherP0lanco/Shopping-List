@@ -21,6 +21,7 @@ function App() {
   })
   const [apiResults, setApiResults] = useState([])
   const [isSearching, setIsSearching] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState(null)
   const [newFolderName, setNewFolderName] = useState('')
   const [editingFolderId, setEditingFolderId] = useState(null)
   const [editingFolderName, setEditingFolderName] = useState('')
@@ -172,17 +173,25 @@ function App() {
 
   const addItem = () => {
     if (newItem.trim()) {
-      updateItems([
-        ...items,
-        {
-          id: Date.now(),
-          name: newItem.trim(),
-          quantity: newQuantity,
-          completed: false,
-        },
-      ])
+      const newItemData = {
+        id: Date.now(),
+        name: newItem.trim(),
+        quantity: newQuantity,
+        completed: false,
+      }
+
+      // Add product information if it was selected from API
+      if (selectedProduct) {
+        newItemData.brand = selectedProduct.brand || ''
+        newItemData.image = selectedProduct.image || ''
+        newItemData.productQuantity = selectedProduct.quantity || ''
+      }
+
+      updateItems([...items, newItemData])
       setNewItem('')
       setNewQuantity('1')
+      setSelectedProduct(null)
+      setApiResults([])
     }
   }
 
@@ -403,6 +412,7 @@ function App() {
                 value={newItem}
                 onChange={(e) => {
                   setNewItem(e.target.value)
+                  setSelectedProduct(null) // Clear selected product when typing manually
                   searchOpenFoodFacts(e.target.value)
                 }}
                 onKeyPress={handleKeyPress}
@@ -418,6 +428,7 @@ function App() {
                       className="api-result-item"
                       onClick={() => {
                         setNewItem(product.name)
+                        setSelectedProduct(product)
                         setApiResults([])
                       }}
                     >
@@ -579,10 +590,23 @@ function App() {
                       onChange={() => toggleComplete(item.id)}
                       className="item-checkbox"
                     />
+                    {item.image && (
+                      <img 
+                        src={item.image} 
+                        alt={item.name}
+                        className="item-image"
+                      />
+                    )}
                     <div className="item-details">
                       <span className="item-name">{item.name}</span>
                       <div className="item-meta">
                         <span className="item-quantity">Qty: {item.quantity}</span>
+                        {item.brand && (
+                          <span className="item-brand">Brand: {item.brand}</span>
+                        )}
+                        {item.productQuantity && (
+                          <span className="item-product-quantity">Size: {item.productQuantity}</span>
+                        )}
                       </div>
                     </div>
                   </div>
