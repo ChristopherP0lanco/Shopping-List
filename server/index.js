@@ -12,7 +12,7 @@ app.use(cors());
 app.use(express.json());
 
 // Root route
-app.get('/', (req, res) => {
+app.get('/api', (req, res) => {
   res.json({ message: 'Server is running! Use /api/folders to access the API.' });
 });
 
