@@ -11,7 +11,10 @@ function App() {
   const [newQuantity, setNewQuantity] = useState('1')
   const [searchQuery, setSearchQuery] = useState('')
   const [showSettings, setShowSettings] = useState(false)
-  const [darkMode, setDarkMode] = useState(false)
+  const [darkMode, setDarkMode] = useState(() => {
+    const saved = localStorage.getItem('darkMode')
+    return saved === 'true'
+  })
   const [fontSize, setFontSize] = useState(() => {
     const saved = localStorage.getItem('fontSize')
     return saved || 'medium'
@@ -100,6 +103,11 @@ function App() {
       setIsLoading(false)
     }
   }
+
+  // Save dark mode to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('darkMode', darkMode.toString())
+  }, [darkMode])
 
   // Save font size to localStorage whenever it changes
   useEffect(() => {

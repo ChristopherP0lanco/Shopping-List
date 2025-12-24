@@ -75,3 +75,4 @@ Set the current active folder
 
 Folders are stored in `data/folders.json` file.
 
+
