@@ -248,6 +248,14 @@ app.post('/api/folders/save', (req, res) => {
   }
 });
 
+// Server the static files from the client
+app.use(express.static(path.join(__dirname, '../client/dist')));
+
+// Handle requests by serving index.html for all routes
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../client/dist', 'index.html'));
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
