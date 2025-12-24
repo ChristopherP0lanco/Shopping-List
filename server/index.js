@@ -11,6 +11,11 @@ const DATA_FILE = path.join(__dirname, 'data', 'folders.json');
 app.use(cors());
 app.use(express.json());
 
+// Root route
+app.get('/', (req, res) => {
+  res.json({ message: 'Server is running! Use /api/folders to access the API.' });
+});
+
 // Ensure data directory exists
 const dataDir = path.dirname(DATA_FILE);
 if (!fs.existsSync(dataDir)) {
